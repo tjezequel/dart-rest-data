@@ -10,7 +10,7 @@ class JsonApiAdapter extends Adapter with Http {
   JsonApiAdapter(hostname, this.apiPath) : super(JsonApiSerializer()) {
     this.hostname = hostname;
     _cache = Map<String, Map<String, JsonApiDocument>>();
-    addHeader('Content-Type', 'application/json; charset=utf-8');
+    addHeader('Content-Type', 'application/vnd.api+json; charset=utf-8');
   }
 
   @override
