@@ -9,8 +9,7 @@ class JsonApiSerializer implements Serializer {
     try {
       Map<String, dynamic> parsed = parse(payload);
       var data = parsed['data'];
-      return JsonApiDocument(data['id'], data['type'], data['attributes'],
-          data['relationships'], parsed['included']);
+      return JsonApiDocument(data['id'], data['type'], data['attributes'], data['relationships'], parsed['included']);
     } on FormatException {
       throw DeserializationException();
     }
@@ -19,12 +18,8 @@ class JsonApiSerializer implements Serializer {
   @override
   JsonApiManyDocument deserializeMany(String payload) {
     Map<String, dynamic> parsed = parse(payload);
-    var docs = (parsed['data'] as Iterable).map((item) => JsonApiDocument(
-        item['id'],
-        item['type'],
-        item['attributes'],
-        item['relationships'],
-        parsed['included']));
+    var docs = (parsed['data'] as Iterable).map((item) =>
+        JsonApiDocument(item['id'], item['type'], item['attributes'], item['relationships'], parsed['included']));
     return JsonApiManyDocument(docs, parsed['included'], parsed['meta']);
   }
 
@@ -32,15 +27,19 @@ class JsonApiSerializer implements Serializer {
   String serialize(Object document) {
     try {
       JsonApiDocument jsonApiDoc = (document as JsonApiDocument);
-      return json.encode({
+      Map<String, dynamic> data = {
         'data': {
-          'id': jsonApiDoc.id,
-          'type': jsonApiDoc.type,
+          'type': jsonApiDoc.id,
           'attributes': jsonApiDoc.attributes,
-          'relationships': jsonApiDoc.relationships
         }
-        //TODO included
-      });
+      };
+      if (jsonApiDoc.id != null) {
+        (data['data'] as Map<String, dynamic>).addAll({'id': jsonApiDoc.id});
+      }
+      if (jsonApiDoc.relationships != null) {
+        (data['data'] as Map<String, dynamic>).addAll({'relationships': jsonApiDoc.relationships});
+      }
+      return jsonEncode(data);
     } on CastError {
       throw ArgumentError('document must be a JsonApiDocument');
     } on JsonUnsupportedObjectError {
@@ -59,8 +58,7 @@ class JsonApiDocument {
   Iterable<dynamic> included;
   Iterable<dynamic> errors;
 
-  JsonApiDocument(this.id, this.type, this.attributes, this.relationships,
-      [this.included]);
+  JsonApiDocument(this.id, this.type, this.attributes, this.relationships, [this.included]);
 
   JsonApiDocument.create(this.type, this.attributes, [this.relationships]);
 
@@ -69,39 +67,32 @@ class JsonApiDocument {
           other.id,
           other.type,
           Map<String, dynamic>.from(other.attributes),
-          other.relationships != null
-              ? _deepCopyRelationships(other.relationships)
-              : null,
+          other.relationships != null ? _deepCopyRelationships(other.relationships) : null,
           other.included != null ? List.from(other.included) : null,
         );
 
   bool get isNew => id == null;
 
-  Map<String, dynamic> dataForHasOne(String relationshipName) =>
-      relationships.containsKey(relationshipName)
-          ? (relationships[relationshipName]['data'] ?? Map<String, dynamic>())
-          : Map<String, dynamic>();
+  Map<String, dynamic> dataForHasOne(String relationshipName) => relationships.containsKey(relationshipName)
+      ? (relationships[relationshipName]['data'] ?? Map<String, dynamic>())
+      : Map<String, dynamic>();
 
-  String idFor(String relationshipName) =>
-      dataForHasOne(relationshipName)['id'];
+  String idFor(String relationshipName) => dataForHasOne(relationshipName)['id'];
 
-  String typeFor(String relationshipName) =>
-      dataForHasOne(relationshipName)['type'];
+  String typeFor(String relationshipName) => dataForHasOne(relationshipName)['type'];
 
-  Iterable<dynamic> dataForHasMany(String relationshipName) =>
-      relationships[relationshipName]['data'] ?? List();
+  Iterable<dynamic> dataForHasMany(String relationshipName) => relationships[relationshipName]['data'] ?? List();
 
-  Iterable<String> idsFor(String relationshipName) =>
-      relationships.containsKey(relationshipName)
-          ? dataForHasMany(relationshipName).map((record) => record['id'])
-          : List<String>();
+  Iterable<String> idsFor(String relationshipName) => relationships.containsKey(relationshipName)
+      ? dataForHasMany(relationshipName).map((record) => record['id'])
+      : List<String>();
 
   Iterable<JsonApiDocument> includedDocs(String type, [Iterable<String> ids]) {
     ids ??= idsFor(type);
     return (included ?? List())
         .where((record) => record['type'] == type && ids.contains(record['id']))
-        .map<JsonApiDocument>((record) => JsonApiDocument(record['id'],
-            record['type'], record['attributes'], record['relationships']));
+        .map<JsonApiDocument>(
+            (record) => JsonApiDocument(record['id'], record['type'], record['attributes'], record['relationships']));
   }
 }
 
@@ -122,21 +113,15 @@ class JsonApiManyDocument extends Iterable<JsonApiDocument> {
     docs = docs.followedBy(moreDocs);
   }
 
-  Iterable<String> idsForHasOne(String relationshipName) => docs
-      .map((doc) => doc.idFor(relationshipName))
-      .where((id) => id != null)
-      .toSet();
+  Iterable<String> idsForHasOne(String relationshipName) =>
+      docs.map((doc) => doc.idFor(relationshipName)).where((id) => id != null).toSet();
 
-  Iterable<String> idsForHasMany(String relationshipName) => docs
-      .map((doc) => doc.idsFor(relationshipName))
-      .expand((ids) => ids)
-      .where((id) => id != null)
-      .toSet();
+  Iterable<String> idsForHasMany(String relationshipName) =>
+      docs.map((doc) => doc.idsFor(relationshipName)).expand((ids) => ids).where((id) => id != null).toSet();
 
   Iterable<JsonApiDocument> includedDocs(String type) => included
       .where((record) => record['type'] == type)
-      .map((record) => JsonApiDocument(record['id'], record['type'],
-          record['attributes'], record['relationships']));
+      .map((record) => JsonApiDocument(record['id'], record['type'], record['attributes'], record['relationships']));
 }
 
 _deepCopyRelationships(other) {
@@ -159,8 +144,7 @@ _deepCopyRelationships(other) {
     if (firstValue is! Map && firstValue is! List) {
       return List<Map<String, dynamic>>.from(other);
     } else {
-      return List<Map<String, dynamic>>.from(
-          other.map((val) => _deepCopyRelationships(val)));
+      return List<Map<String, dynamic>>.from(other.map((val) => _deepCopyRelationships(val)));
     }
   }
 }
