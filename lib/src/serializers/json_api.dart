@@ -29,7 +29,7 @@ class JsonApiSerializer implements Serializer {
       JsonApiDocument jsonApiDoc = (document as JsonApiDocument);
       Map<String, dynamic> data = {
         'data': {
-          'type': jsonApiDoc.id,
+          'type': jsonApiDoc.type,
           'attributes': jsonApiDoc.attributes,
         }
       };
