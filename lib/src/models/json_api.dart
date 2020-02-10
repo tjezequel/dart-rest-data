@@ -20,8 +20,7 @@ class JsonApiModel with EquatableMixin implements Model {
 
   JsonApiModel.init(String type) : this.create(type);
 
-  JsonApiModel.from(JsonApiModel other)
-      : this(JsonApiDocument.from(other.jsonApiDoc));
+  JsonApiModel.from(JsonApiModel other) : this(JsonApiDocument.from(other.jsonApiDoc));
 
   JsonApiModel.shallowCopy(JsonApiModel other) : this(other.jsonApiDoc);
 
@@ -45,28 +44,21 @@ class JsonApiModel with EquatableMixin implements Model {
   String serialize() => JsonApiSerializer().serialize(jsonApiDoc);
 
   String idFor(String relationshipName) => jsonApiDoc.idFor(relationshipName);
-  String typeFor(String relationshipName) =>
-      jsonApiDoc.typeFor(relationshipName);
+  String typeFor(String relationshipName) => jsonApiDoc.typeFor(relationshipName);
 
-  Iterable<String> idsFor(String relationshipName) =>
-      jsonApiDoc.idsFor(relationshipName);
+  Iterable<String> idsFor(String relationshipName) => jsonApiDoc.idsFor(relationshipName);
 
-  Iterable<JsonApiDocument> includedDocs(String type, [Iterable<String> ids]) =>
-      jsonApiDoc.includedDocs(type, ids);
+  Iterable<JsonApiDocument> includedDocs(String type, [String relationName, Iterable<String> ids]) =>
+      jsonApiDoc.includedDocs(type, relationName ?? type, ids);
 
-  bool attributeHasErrors(String attributeName) => hasErrors
-      ? errors.any((error) =>
-          _isAttributeError(error, attributeName) && _hasErrorDetail(error))
-      : false;
+  bool attributeHasErrors(String attributeName) =>
+      hasErrors ? errors.any((error) => _isAttributeError(error, attributeName) && _hasErrorDetail(error)) : false;
 
-  Iterable<String> errorsFor(String attributeName) => errors
-      .where((error) => _isAttributeError(error, attributeName))
-      .map((error) => error['detail']);
+  Iterable<String> errorsFor(String attributeName) =>
+      errors.where((error) => _isAttributeError(error, attributeName)).map((error) => error['detail']);
 
   void clearErrorsFor(String attributeName) {
-    errors = errors
-        .where((error) => !_isAttributeError(error, attributeName))
-        .toList();
+    errors = errors.where((error) => !_isAttributeError(error, attributeName)).toList();
   }
 
   void clearErrors() {
@@ -77,9 +69,7 @@ class JsonApiModel with EquatableMixin implements Model {
       error['source']['pointer'] == "/data/attributes/$attributeName";
 
   bool _hasErrorDetail(Map<String, dynamic> error) =>
-      error['detail'] != null &&
-      error['detail'] is String &&
-      (error['detail'] as String).isNotEmpty;
+      error['detail'] != null && error['detail'] is String && (error['detail'] as String).isNotEmpty;
 
   void setHasOne(String relationshipName, JsonApiModel model) {
     if (relationships.containsKey(relationshipName)) {
@@ -91,11 +81,9 @@ class JsonApiModel with EquatableMixin implements Model {
     }
   }
 
-  static DateTime toDateTime(String value) =>
-      (value == null || value.isEmpty) ? null : DateTime.parse(value).toLocal();
+  static DateTime toDateTime(String value) => (value == null || value.isEmpty) ? null : DateTime.parse(value).toLocal();
 
-  static String toUtcIsoString(DateTime value) =>
-      value.toUtc().toIso8601String();
+  static String toUtcIsoString(DateTime value) => value.toUtc().toIso8601String();
 
   @override
   List<Object> get props => [id, type, errors];
@@ -115,6 +103,5 @@ abstract class JsonApiManyModel<T extends JsonApiModel> extends Iterable<T> {
   int get totalPages => manyDoc.meta['total_pages'];
   int get totalCount => manyDoc.meta['total_count'];
 
-  Iterable<JsonApiDocument> includedDocs(String type) =>
-      manyDoc.includedDocs(type);
+  Iterable<JsonApiDocument> includedDocs(String type) => manyDoc.includedDocs(type);
 }

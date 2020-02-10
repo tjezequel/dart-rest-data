@@ -87,8 +87,9 @@ class JsonApiDocument {
       ? dataForHasMany(relationshipName).map((record) => record['id'])
       : List<String>();
 
-  Iterable<JsonApiDocument> includedDocs(String type, [Iterable<String> ids]) {
-    ids ??= idsFor(type);
+  Iterable<JsonApiDocument> includedDocs(String type, [String relationName, Iterable<String> ids]) {
+    relationName ??= type;
+    ids ??= idsFor(relationName);
     return (included ?? List())
         .where((record) => record['type'] == type && ids.contains(record['id']))
         .map<JsonApiDocument>(
